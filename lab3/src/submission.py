@@ -93,12 +93,9 @@ class GMM:
         """
         N, D = X.shape
         gamma = np.zeros((N, self.n_components))
-
-        # 1.1 E-step: Compute the responsibilities
-        # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
-        return gamma
+        for k in range(self.n_components):
+            gamma[:, k] = self.pi[k] * self._gaussian(X, self.means[k], np.linalg.inv(self.covs[k]), np.linalg.det(self.covs[k]))
+        return gamma/ np.sum(gamma, axis=1, keepdims=True)
 
     def _m_step(self, X: np.ndarray, gamma: np.ndarray):
         """
@@ -109,12 +106,15 @@ class GMM:
             - gamma: np.ndarray, shape (N, K), Responsibilities.
         """
         N, D = X.shape
-        n_soft = np.sum(gamma, axis=0)  # [K,]
+        a = np.dot(gamma.T, X)
+        b = np.sum(gamma, axis=0)[:, None]
+        self.means = a / b
+        self.covs = np.array([
+            np.dot((gamma[:, k][:, None] * (X - self.means[k])).T, X - self.means[k]) / np.sum(gamma[:, k])
+            for k in range(self.n_components)
+        ])
+        self.pi = np.sum(gamma, axis=0) / N
 
-        # 1.2 M-step: Update the parameters
-        # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
 
     def _gaussian(self, X: np.ndarray, mean: np.ndarray, inv_cov: np.ndarray, det: float) -> np.ndarray:
         """
@@ -215,10 +215,14 @@ class PCA:
         Args:
             - X: np.ndarray, shape (N, D), Data.
         """
-        # 2.1 Compute the principal components
-        # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
+        self.mean = np.mean(X, axis=0)
+        X_centered = X - self.mean
+        eigenvalues, eigenvectors = np.linalg.eigh(np.cov(X_centered.T))
+        sorted_indices = np.argsort(eigenvalues)[::-1]
+        eigenvalues  = eigenvalues[sorted_indices]
+        eigenvectors = eigenvectors[:, sorted_indices]
+        self.components = eigenvectors[:, :self.dim]
+        self.components = self.components.T
 
     def transform(self, X: np.ndarray) -> np.ndarray:
         """
@@ -276,12 +280,20 @@ def sample_from_gmm(gmm: GMM, pca: PCA, label: int, path: Union[str, Path]):
         - pca: PCA, Principal Component Analysis.
         - label: int, Cluster label.
     """
-    # 5.1
-    # BEGIN_YOUR_CODE
-    raise Exception("Not implemented yet")
-    # END_YOUR_CODE
+    path, sample = f(gmm, pca, label, path)
 
     # Save an example image(you can change this part of the code if you want)
     sample = Image.fromarray(sample[0], mode="L")  # if sample shape is (1, 28, 28)
     path = Path(path)
     sample.save(path / "gmm_sample.png")
+
+def f(gmm, pca, label, path):
+    pi = gmm.pi[label]
+    sample = np.random.multivariate_normal(gmm.means[label], gmm.covs[label], size=1)
+    sample_pca = pca.inverse_transform(sample)
+    print(sample_pca)
+    sample_image = np.clip(sample_pca.reshape(28, 28), 0, 255).astype(np.uint8)
+    sample_image = Image.fromarray(sample_image, mode="L")
+    path = Path(path)
+    sample_image.save(path / "gmm_sample.png")
+    return path,sample
