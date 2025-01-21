@@ -1,4 +1,5 @@
 import math
+import random
 import json
 import gymnasium as gym
 import numpy as np
@@ -35,6 +36,7 @@ def valueIteration(
     Returns:
         Dictionary mapping each state to an action.
     """
+    #TODO
     # Define a mapping from states to Set[Actions] so we can determine all the actions that can be taken from s.
     # You may find this useful in your approach.
     stateActions = defaultdict(set)
@@ -43,20 +45,31 @@ def valueIteration(
 
     def computeQ(V: Dict[StateT, float], state: StateT, action: ActionT) -> float:
         # Return Q(state, action) based on V(state)
-
-        # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
-        # END_YOUR_CODE
+        q_value = 0.0
+        for nextState, prob, reward in succAndRewardProb[(state, action)]:
+            q_value += prob * (reward + discount * V[nextState])
+        return q_value
 
     def computePolicy(V: Dict[StateT, float]) -> Dict[StateT, ActionT]:
         # Return the policy given V.
         # Remember the policy for a state is the action that gives the greatest Q-value.
         # IMPORTANT: if multiple actions give the same Q-value, choose the largest action number for the policy.
         # HINT: We only compute policies for states in stateActions.
-
+        #TODO
         # 1-a
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        policy = {}
+        for state in stateActions:
+            best_action = None
+            best_q_value = -float('inf')
+            for action in stateActions[state]:
+                q_value = computeQ(V, state, action)
+                # 如果q值更大或者q值相等但action更大,则更新最优动作
+                if q_value > best_q_value or (q_value == best_q_value and action > best_action):
+                    best_q_value = q_value
+                    best_action = action
+            policy[state] = best_action
+        return policy
         # END_YOUR_CODE
 
     print("Running valueIteration...")
@@ -66,10 +79,21 @@ def valueIteration(
         newV = defaultdict(float)  # This will return 0 for states not seen (handles terminal states)
         # update V values using the computeQ function above.
         # repeat until the V values for all states do not change by more than epsilon.
-
+        #TODO
         # 1-b
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        for state in stateActions:
+        # 对每个状态计算最大Q值作为新的V值 
+            best_q_value = -float('inf')
+            for action in stateActions[state]:
+                q_value = computeQ(V, state, action)
+                best_q_value = max(best_q_value, q_value)
+            newV[state] = best_q_value
+        
+    # 检查是否收敛
+        max_change = max(abs(newV[state] - V[state]) for state in stateActions)
+        if max_change < epsilon:
+            break
         # END_YOUR_CODE
 
         V = newV
@@ -118,10 +142,16 @@ class ModelBasedMonteCarlo(RLAlgorithm):
             explorationProb = 1.0
         elif self.numIters > 1e6:  # Lower the exploration probability by a logarithmic factor.
             explorationProb = explorationProb / math.log(self.numIters - 100000 + 1)
-
+        #TODO
         # 2-a
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        if random.random() < explorationProb:
+            return random.choice(list(self.actions))
+        else:
+            if state in self.pi:
+                return self.pi[state]
+            else:
+                return random.choice(list(self.actions))
         # END_YOUR_CODE
 
     def incorporateFeedback(self, state: StateT, action: ActionT, reward: int, nextState: StateT, terminal: bool):
@@ -146,10 +176,18 @@ class ModelBasedMonteCarlo(RLAlgorithm):
             # Hint 2: Reward(s, a, s') = (total reward of (s,a) -> s') / (counts of transition (s,a) -> s')
             # Then run valueIteration and update self.pi.
             succAndRewardProb = defaultdict(list)  # (state, action) -> [(nextState, transitionProb, expectedreward)]
-
+            #TODO
             # 2-b
             # BEGIN_YOUR_CODE
-            raise Exception("Not implemented yet")
+            for (state_a, action_a), next_states in self.tCounts.items():
+                total_count = sum(next_states.values())
+                for next_state, count in next_states.items():
+                    prob = count / total_count  # 转移概率
+                    expected_reward = self.rTotal[(state_a, action_a)][next_state] / count  # 期望奖励
+                    succAndRewardProb[(state_a, action_a)].append((next_state, prob, expected_reward))
+        
+        # 运行value iteration更新策略
+            self.pi = valueIteration(succAndRewardProb, self.discount)
             # END_YOUR_CODE
 
     def save_pretrained(self, path: Union[str, Path]):
@@ -211,10 +249,15 @@ class TabularQLearning(RLAlgorithm):
             explorationProb = explorationProb / math.log(self.numIters - 100000 + 1)
         # HINT 1: You can access Q-value with self.Q[state, action]
         # HINT 2: Use random.random() to sample from the uniform distribution [0, 1]
-
+        #TODO
         # 3-a
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        if random.random() < explorationProb:
+            return random.choice(self.actions)
+        else:
+            # 选择Q值最大的动作
+            best_action = max(self.actions, key=lambda action: self.Q[state, action])
+            return best_action
         # END_YOUR_CODE
 
     # Call this function to get the step size to update the weights.
@@ -232,10 +275,14 @@ class TabularQLearning(RLAlgorithm):
         and the discounted future value.
         HINT 2: V for terminal states is 0
         """
-
+        #TODO
         # 3-b
         # BEGIN_YOUR_CODE
-        raise Exception("Not implemented yet")
+        future_q = 0 if terminal else max(self.Q[nextState, a] for a in self.actions)
+        target = reward + self.discount * future_q
+    
+    # 更新Q值
+        self.Q[state, action] += self.getStepSize() * (target - self.Q[state, action])
         # END_YOUR_CODE
 
     def save_pretrained(self, path: Union[str, Path]):

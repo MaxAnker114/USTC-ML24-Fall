@@ -46,8 +46,8 @@ def plotRewards(trainRewards: list, evalRewards: list, savePath: Union[str, Path
 
     if savePath is not None:
         plt.savefig(savePath)
-    if show:
-        plt.show()
+    #if show:
+    #   plt.show()
 
 
 if __name__ == "__main__":
@@ -75,13 +75,13 @@ if __name__ == "__main__":
         default=None,
         help="Path to save results",
     )
-    parser.add_argument("--mcvi_exprob", type=float, default=0.5, help="ExplorationProb for mcvi training.")
-    parser.add_argument("--mcvi_episodes", type=int, default=1000, help="The number of episodes for mcvi training.")
+    parser.add_argument("--mcvi_exprob", type=float, default=0.77, help="ExplorationProb for mcvi training.")
+    parser.add_argument("--mcvi_episodes", type=int, default=500, help="The number of episodes for mcvi training.")
     parser.add_argument(
-        "--tabular_exprob", type=float, default=0.15, help="ExplorationProb for TabularQLearning training."
+        "--tabular_exprob", type=float, default=0.77, help="ExplorationProb for TabularQLearning training."
     )
     parser.add_argument(
-        "--tabular_episodes", type=int, default=1000, help="The number of episodes for TabularQLearning Training."
+        "--tabular_episodes", type=int, default=500, help="The number of episodes for TabularQLearning Training."
     )
 
     # If you don't want to try Policy Gradient, the above arguments are enough.

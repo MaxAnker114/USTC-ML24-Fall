@@ -72,8 +72,8 @@ if __name__ == "__main__":
             discount=0.999,
             low=[-1.2, -0.07],
             high=[0.6, 0.07],
-            num_bins=20,
-            time_limit=1000,
+            num_bins=10,
+            time_limit=3000,
         )
         mdp.env = gym.make("MountainCar-v0", render_mode="human")
         rl = ModelBasedMonteCarlo.from_pretrained(model_path)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
             low=[-1.2, -0.07],
             high=[0.6, 0.07],
             num_bins=20,
-            time_limit=1000,
+            time_limit=3000,
         )
         mdp.env = gym.make("MountainCar-v0", render_mode="human")
         rl = TabularQLearning.from_pretrained(model_path)
